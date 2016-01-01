@@ -1,0 +1,16 @@
+{
+  "name": "connect4",
+  "version": "1.0.0",
+  "description": "single page noscript game",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "pimlu",
+  "license": "MIT",
+  "dependencies": {
+    "node-uuid": "^1.4.7"
+  },
+  "private": true
+}
