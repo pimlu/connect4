@@ -153,13 +153,19 @@ function play(req, res, args) {
     req: req,
     res: res,
     gid: gid,
-    movhash: _.fill(Array(width), 1)
+    movhash: _.fill(Array(width), 1),
+    //periodically send a keep-alive byte, just in case of timeout
+    keepalive: setInterval(() => {
+      if(res.finished) return;
+      res.write(' ');
+    }, 60*1000)
   };
   req.on('close', () => {
     //remove them from the games and active requests
     game.players = _.difference(game.players, [id]);
     if(game.active) endgame(gid, css(templates.disc()));
     if(!game.players.length) delete games[gid];
+    clearInterval(reqs[id].keepalive);
     delete reqs[id];
   });
   game.players.push(id);
