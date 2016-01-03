@@ -48,7 +48,8 @@ const templates = {
   puck: (pid, x, y) => `<div class="puck ${colors[pid]} slide${y}" style="left:${x}00px;top:${y}00px"></div>`,
   gameurl: (gid) => {
     const portsuf = port===80?'':`:${port}`;
-    return `<div class="url"><p>To get someone else to play with you, have them go to http://${domain+portsuf}/play/${gid}</p></div>`;
+    const url = `http://${domain+portsuf}/play/${gid}`;
+    return `<div class="url"><p>To get someone else to play with you, have them go to <input type="text" value="${url}" size=${url.length} readonly="readonly"/></p></div>`;
   },
   iturn: (pnum) => `
 .turn { display: block; }
