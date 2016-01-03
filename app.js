@@ -32,7 +32,7 @@ function css(str) {
 }
 //these all get sent multiple times as the game plays out
 const templates = {
-  puck: (color, x, y) => `<div class="puck ${color}" style="left:${x}00px;top:${y}00px"></div>`,
+  puck: (pid, x, y) => `<div class="puck ${colors[pid]}" style="left:${x}00px;top:${y}00px"></div>`,
   gameurl: (gid) => {
     const portsuf = port===80?'':`:${port}`;
     return `<div class="url"><p>To get someone else to play with you, have them go to http://${hostname+portsuf}/play/${gid}</p></div>`;
@@ -95,7 +95,7 @@ function play(req, res, args) {
     gid = uuid.v4();
     games[gid] = {
       players: [],
-      board: _.fill(Array(width), []),
+      board: _.fill(Array(width), null).map((_) => []),
       turn: 0,
       active: false
     }
@@ -111,7 +111,7 @@ function play(req, res, args) {
     req: req,
     res: res,
     gid: gid,
-    movhash: _.fill(Array(width), 0)
+    movhash: _.fill(Array(width), 1)
   };
   req.on('finish', () => {
     //remove them from the games and active requests
@@ -131,7 +131,7 @@ function play(req, res, args) {
   });
   let headsuf = '';
   for(let i=0; i<width; i++) {
-    headsuf += templates.movurl(id, i, true);
+    headsuf += templates.movurl(i, id, 0, true);
   }
   headsuf = css(headsuf);
   
@@ -151,16 +151,30 @@ function move(req, res, args) {
   
   const id = args[0], index = +args[1];
   if(!id || !reqs[id]) return;
+  
   console.log(index);
   if(!(index>=0 && index<width)) return;
-  
-  //TODO add puck
   
   //wait to add a new url, cause otherwise if the mouse is held down it spams requests
   setTimeout(() => {
     if(reqs[id].finished) return; //don't throw an error if they quit or something
     domovurl(id, index);
   }, 500);
+  
+  const gid = reqs[id].gid;
+  const game = games[gid];
+  const pid = game.players.indexOf(id);
+  if(!game.active || game.turn%2 !== pid) return;
+  
+  
+  game.turn++;
+  game.board[index].push(pid);
+  
+  console.log(game.board);
+  
+  const y = height-(game.board[index].length);
+  broadcast(gid, templates.puck(pid, index, y));
+  
 }
 //send them a new move url so they can click again
 //the reason why I do this is because in my tests telling it to expire/not to cache didn't work
