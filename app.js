@@ -60,6 +60,10 @@ const templates = {
 .win { display: block; }
 .${colors[1-pnum]}w { display: none; }
 `,
+  disc: () => `
+.whoseturn { display: none; }
+.disc { display: block; }
+`,
   end: () => '</div></div></body></html>'
 }
 //checks for a win given the most recent move is at index
@@ -151,12 +155,11 @@ function play(req, res, args) {
     gid: gid,
     movhash: _.fill(Array(width), 1)
   };
-  req.on('finish', () => {
+  req.on('close', () => {
     //remove them from the games and active requests
-    game.players = _.remove(game.players, id);
-    if(!game.players.length) {
-      delete games[gid];
-    }
+    game.players = _.difference(game.players, [id]);
+    if(game.active) endgame(gid, css(templates.disc()));
+    if(!game.players.length) delete games[gid];
     delete reqs[id];
   });
   game.players.push(id);

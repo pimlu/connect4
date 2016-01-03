@@ -43,8 +43,8 @@ div { margin:0; padding: 0; }
 }
 .puck.red { background: red; }
 .puck.yel { background: yellow; }
-.turn, .win { display: none; }
-.turn, .url, .win { color: rgb(40,40,40); }
+.turn, .win, .disc { display: none; }
+.turn, .url, .win, .disc { color: rgb(40,40,40); }
 .bold {
   font-weight: bold;
   text-shadow: 0px 1px 1px black;
@@ -57,8 +57,11 @@ div { margin:0; padding: 0; }
   <div class="game">
     <div class="turn">
       <p>You are <span class="bold"><span class="tred pred">red</span><span class="tyel pyel">yellow</span></span>.</p>
-      <p>It's <span class="bold"><span class="your">your</span><span class="their"><span class="tred reds">red's</span><span class="tyel yels">yellow's</span></span></span> turn!</p>
+      <p class="whoseturn">It's <span class="bold"><span class="your">your</span><span class="their"><span class="tred reds">red's</span><span class="tyel yels">yellow's</span></span></span> turn!</p>
     </div>
     <div class="win">
       <p><span class="bold"><span class="tred redw">red</span><span class="tyel yelw">yellow</span></span> wins!</p>
+    </div>
+    <div class="disc">
+      <p>Your opponent has disconnected.</p>
     </div>
