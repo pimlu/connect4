@@ -2,7 +2,7 @@
 
 This is an online multiplayer Connect 4 game written as a technical experiment.
 
-It's actually is a "single-page app" but doesn't use a single JS tag.  The way it does this is sort of convoluted.
+It's actually a "single-page app" but it doesn't use a single JS tag.  The way it does this is sort of convoluted.
 
 ### Usage
 
