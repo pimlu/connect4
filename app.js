@@ -4,6 +4,7 @@ const http = require('http'),
   _ = require('lodash'),
   uuid = require('node-uuid');
 
+const domain = 'localhost';
 const hostname = '127.0.0.1';
 const port = 1337;
 const width = 7, height = 6;
@@ -35,16 +36,16 @@ const templates = {
   puck: (pid, x, y) => `<div class="puck ${colors[pid]}" style="left:${x}00px;top:${y}00px"></div>`,
   gameurl: (gid) => {
     const portsuf = port===80?'':`:${port}`;
-    return `<div class="url"><p>To get someone else to play with you, have them go to http://${hostname+portsuf}/play/${gid}</p></div>`;
+    return `<div class="url"><p>To get someone else to play with you, have them go to http://${domain+portsuf}/play/${gid}</p></div>`;
   },
   iturn: (pnum) => `
 .turn { display: block; }
 .url { display: none; }
 .p${colors[1-pnum]}, .${colors[pnum]}s { display: none; }
 .your { color: ${['red', 'yellow'][pnum]}; } 
-`,
-  turn: (pnum, num) => {
-    const yturn = pnum === num%2;
+`+templates.turn(pnum, 0),
+  turn: (pnum, tnum) => {
+    const yturn = pnum === tnum%2;
     return `
 .your { display:${yturn?'inline':'none'} }
 .their { display:${yturn?'none':'inline'} }
@@ -53,10 +54,48 @@ const templates = {
   movurl: (index, id, hash) => `
 .move${index}:active {
   background: url('/move/${id}/${index}/${hash}');
+}`,
+  pwins: (pnum) => `
+.turn { display: none; }
+.win { display: block; }
+.${colors[1-pnum]}w { display: none; }
+`,
+  end: () => '</div></div></body></html>'
 }
-`
+//checks for a win given the most recent move is at index
+function checkwin(board, index) {
+  const x = index, y = board[x].length-1, pid = board[x][y];
+  let dircount = _.fill(Array(9), 0);
+  //count outward in all 8 directions how many similar pucks there are
+  for(let i=1; i<4; i++) {
+    for(let j=0; j<9; j++) {
+      //marks that it hit an obstacle by setting the index negative
+      if(dircount[j]<0 || 1/dircount[j] === -Infinity) continue;
+      const dx = (j/3|0)-1, dy = j%3 - 1;
+      if(dx === 0 && dy === 0) continue; //skip non-direction
+      const nx = x+dx*i, ny = y+dy*i;
+      //if the puck's not a match, mark it as done
+      if(!_.inRange(nx, width) || !_.inRange(ny, height) || board[nx][ny] !== pid) {
+        dircount[j] *= -1;
+      } else { //otherwise, count it up
+        dircount[j]++;
+      }
+    }
+  }
+  dircount = dircount.map(Math.abs); //fix the negatives we made
+  //now check if there's 4 in any direction
+  const calcj = (dx, dy) => (dx+1)*3+dy+1;
+  for(let dx = -1; dx<=1; dx++) {
+    for(let dy = -1; dy<= 1; dy++) {
+      if(dx === 0 && dy === 0) continue;
+      const j = calcj(dx, dy);
+      const oj = calcj(-dx, -dy);
+      //sums one direction, plus its opposite, plus the tile itself (1)
+      if(dircount[j] + dircount[oj] + 1 >= 4) return true;
+    }
+  }
+  return false;
 }
-
 
 const actions = {
   play: play,
@@ -88,7 +127,6 @@ function nf404(req, res) {
 }
 
 function play(req, res, args) {
-  
   //now use our game id if we have one
   let gid = args[0];
   if(!gid) {
@@ -141,7 +179,6 @@ function play(req, res, args) {
   res.write(header + headsuf + table);
   //if they just joined a game, start it
   if(args[0]) start(gid);
-  //res.end('</div></div></body></html>');
 }
 //called when someone makes a move
 function move(req, res, args) {
@@ -152,12 +189,11 @@ function move(req, res, args) {
   const id = args[0], index = +args[1];
   if(!id || !reqs[id]) return;
   
-  console.log(index);
-  if(!(index>=0 && index<width)) return;
+  if(!_.inRange(index, width)) return;
   
   //wait to add a new url, cause otherwise if the mouse is held down it spams requests
   setTimeout(() => {
-    if(reqs[id].finished) return; //don't throw an error if they quit or something
+    if(reqs[id].res.finished) return; //don't throw an error if they quit or something
     domovurl(id, index);
   }, 500);
   
@@ -166,14 +202,19 @@ function move(req, res, args) {
   const pid = game.players.indexOf(id);
   if(!game.active || game.turn%2 !== pid) return;
   
-  
+  //allow the opponent to move
   game.turn++;
   game.board[index].push(pid);
   
-  console.log(game.board);
-  
-  const y = height-(game.board[index].length);
+  const y = height-game.board[index].length;
   broadcast(gid, templates.puck(pid, index, y));
+  
+  if(checkwin(game.board, index)) {
+    game.active = false;
+    endgame(gid, css(templates.pwins(pid)));
+    return;
+  }
+  [0, 1].forEach((p) => send(gid, css(templates.turn(p, game.turn)), p));
   
 }
 //send them a new move url so they can click again
@@ -188,6 +229,12 @@ function domovurl(id, index, nowrite) {
 function start(gid) {
   [0, 1].forEach((p) => send(gid, css(templates.iturn(p)), p));
   games[gid].active = true;
+}
+//ends with a broadcast
+function endgame(gid, text) {
+  const resarr = games[gid].players.map((pid) => reqs[pid].res);
+  const endhtml = templates.end();
+  resarr.forEach((res) => res.end(text+endhtml));
 }
 function broadcast(gid, text) {
   const game = games[gid];
