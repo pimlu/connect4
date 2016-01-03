@@ -6,6 +6,7 @@
   <style>
 div { margin:0; padding: 0; }
 .game {
+  font-family: sans-serif;
 }
 .boardbg {
   position: relative;
@@ -42,8 +43,19 @@ div { margin:0; padding: 0; }
 }
 .puck.red { background: red; }
 .puck.yel { background: yellow; }
+.turn { display: none; }
+.turn, .url { color: rgb(40,40,40); }
+.bold {
+  font-weight: bold;
+  text-shadow: 0px 1px 1px black;
+}
+.pred, .reds { color: red; }
+.pyel, .yels { color: yellow; }
   </style>
 </head>
 <body>
   <div class="game">
-    <div class="boardbg">
+    <div class="turn">
+      <p>You are <span class="bold"><span class="pred">red</span><span class="pyel">yellow</span></span>.</p>
+      <p>It's <span class="bold"><span class="your">your</span><span class="their reds">red's</span><span class="their yels">yellow's</span></span> turn!</p>
+    </div>
