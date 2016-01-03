@@ -24,7 +24,19 @@ const table = (function gentable(w, h) {
     out += '</div>';
   }
   out += '</div>';
-  return out;
+  let anims = '';
+  for(let y=0; y<h; y++) {
+    anims += `
+.slide${y} {
+  animation: doslide${y} linear ${(y+1)/height}s;
+  animation-iteration-count: 1;
+}
+@keyframes doslide${y} {
+  0% { transform: translate(0,${-y-1}00px); }
+  100% { transform: translate(0,0); }
+}`;
+  }
+  return out + css(anims);
 })(width, height);
 
 const colors = ['red', 'yel'];
@@ -33,7 +45,7 @@ function css(str) {
 }
 //these all get sent multiple times as the game plays out
 const templates = {
-  puck: (pid, x, y) => `<div class="puck ${colors[pid]}" style="left:${x}00px;top:${y}00px"></div>`,
+  puck: (pid, x, y) => `<div class="puck ${colors[pid]} slide${y}" style="left:${x}00px;top:${y}00px"></div>`,
   gameurl: (gid) => {
     const portsuf = port===80?'':`:${port}`;
     return `<div class="url"><p>To get someone else to play with you, have them go to http://${domain+portsuf}/play/${gid}</p></div>`;
