@@ -189,7 +189,12 @@ function move(req, res, args) {
   const id = args[0], index = +args[1];
   if(!id || !reqs[id]) return;
   
-  if(!_.inRange(index, width)) return;
+  const gid = reqs[id].gid;
+  const game = games[gid];
+  const pid = game.players.indexOf(id);
+  
+  if(!_.inRange(index, width) ||
+    game.board[index].length >= height) return;
   
   //wait to add a new url, cause otherwise if the mouse is held down it spams requests
   setTimeout(() => {
@@ -197,9 +202,6 @@ function move(req, res, args) {
     domovurl(id, index);
   }, 500);
   
-  const gid = reqs[id].gid;
-  const game = games[gid];
-  const pid = game.players.indexOf(id);
   if(!game.active || game.turn%2 !== pid) return;
   
   //allow the opponent to move
